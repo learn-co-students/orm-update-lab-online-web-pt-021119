@@ -7,17 +7,17 @@ class Student
   def initialize(name, grade, id=nil)
     @name = name
     @grade = grade
-    @id  = nil
+    @id  = id
   end
 
   def update
     sql = "UPDATE students SET name = ?, grade = ? WHERE id = ?"
-    db[:conn].execute(sql, self.name, self.grade, self.id)
+    DB[:conn].execute(sql, self.name, self.grade, self.id)
   end
 
   def save
     if self.id
-      #update
+      self.update
     else
     sql = <<-SQL
       INSERT INTO students (name, grade)
@@ -28,12 +28,22 @@ class Student
     end
   end
 
+  def self.create(name, grade)
+    student = Student.new(name, grade)
+    student.save
+    student
+  end
+
+  def self.new_from_db(row)
+    Student.new(row[1], row[2], row[0])
+  end
+
   def self.create_table
     sql = <<-SQL
         CREATE TABLE IF NOT EXISTS students(
           id INTEGER PRIMARY KEY,
           student TEXT,
-          grade INTEGER
+          grade TEXT
         )
       SQL
     DB[:conn].execute(sql)
@@ -45,8 +55,12 @@ class Student
       SQL
     DB[:conn].execute(sql)
   end
-  # Remember, you can access your database connection anywhere in this class
-  #  with DB[:conn]
 
-
+  def self.find_by_name(name)
+    sql = <<-SQL
+      SELECT * FROM students
+      WHERE name =  ?
+      SQL
+    self.new_from_db(DB[:conn].execute(sql, name)[0])
+  end
 end
